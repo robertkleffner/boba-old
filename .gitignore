@@ -10,6 +10,7 @@
 *.rkt.bak
 \#*.rkt#
 \#*.rkt#*#
+*.bak
 
 # Compiled racket bytecode
 compiled/

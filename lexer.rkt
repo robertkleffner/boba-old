@@ -104,6 +104,7 @@
      ["]" (token "]" lexeme)]
      ["@" (token "@" lexeme)]
      ["." (token "." lexeme)]
+     ["_" (token 'WILDCARD lexeme)]
 
      [(from/to "\"" "\"")
       (token 'STRING

@@ -1,0 +1,3 @@
+verb add = add-i32
+
+export { add }

@@ -2,8 +2,10 @@
 
 unit ::= import* declaration* (main | export)
 
-import ::= /"import" (STRING | REMOTE) /"as" SMALL_NAME
-         | /"import" name-list (STRING | REMOTE) /"as" SMALL_NAME
+import ::= /"import" (STRING | remote) /"as" SMALL_NAME
+         | /"import" name-list (STRING | remote) /"as" SMALL_NAME
+
+remote ::= SMALL_NAME /"." SMALL_NAME /"." SMALL_NAME /":" INTEGER /"." INTEGER /"." INTEGER
 
 declaration
     ::= data
@@ -59,7 +61,7 @@ synonym ::= /"synonym" type-constructor type-variable* /"=" type-expression
 
 check ::= /"check" term-variable /":" type-expression
 
-function ::= /"verb" term-variable fixed-size-params? /"=" term-statement-block
+function ::= /"verb" term-variable fixed-size-params? /"=" simple-expr
 
 recursive ::= /"recursive" /"{" function+ /"}"
 

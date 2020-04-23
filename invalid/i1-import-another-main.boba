@@ -1,0 +1,3 @@
+import "invalid/another-main.boba" as a
+
+main = 1 2 3

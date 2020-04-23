@@ -1,0 +1,30 @@
+Pass 0: Load the whole program into memory
+- Make sure only one unit with a `main` declartion is loaded
+
+Pass 1: Import/export name-list check
+- For each import clause with explicit names, import name list is cross-referenced with the associated unit to check all explicitly imported named are actually defined
+- Likewise, each export clause is cross-reference with the decls of the owning unit to make sure it defines all exported names
+
+Pass 2: Adverb predicate checks
+- In every modify instance, every type variable in the context should appear in the head
+- In every modify instance, every head should be a type constructor applied to type variables
+
+Pass 3: Simplify types
+- Convert from the grammar form of types into type applications, sequences, and rows
+
+Pass 4: Simplify terms
+- Eliminate some possible word forms by performing desugaring
+
+Pass 5: Demodularization
+- All names referenced from an imported module, aliased and included locally, will be given their full explicit module path
+- The program can then be flattened into declarations alone
+
+Pass 6: Kind annotate
+- Explicitly annotate all known type variables (adhocs, modifies, nouns) with the inferred kind
+
+Pass 7: Type annotate
+- Explicitly annotate all term variables and decls with their inferred types
+
+Pass 8: Dictionary passing translation
+
+Pass 9: Generate assembly

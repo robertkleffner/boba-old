@@ -45,7 +45,7 @@ overload ::= /"modify" single-predicate predicate-context? /"with" term-variable
 
 deriving ::= /"derive" /"modify" single-predicate predicate-context? /"with" term-variable
 
-predicate-context ::= /"<=" predicate (/"," predicate)*
+predicate-context ::= /"<=" simple-predicate (/"," simple-predicate)*
 
 
 
@@ -67,9 +67,12 @@ recursive ::= /"recursive" /"{" function+ /"}"
 
 
 
-test ::= /"test" property-name /"=" simple-expr (/"is-roughly" | /"satisfies" | /"violates" | /"is" | /"is-not") term-statement-block? simple-expr
+test ::= /"test" property-name /"=" simple-expr assert-type simple-expr
 
-law ::= "exhaustive"? /"law" property-name term-variable* /"=" simple-expr (/"is-roughly" | /"satisfies" | /"violates" | /"is" | /"is-not") term-statement-block? simple-expr
+law ::= "exhaustive"? /"law" property-name term-variable* /"=" simple-expr assert-type simple-expr
+
+assert-type ::= ("is-roughly" | "satisfies" | "violates")
+              | ("is" | "is-not") term-statement-block?
 
 
 

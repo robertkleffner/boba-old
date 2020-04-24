@@ -12,19 +12,24 @@ Pass 2: Adverb predicate checks
 Pass 3: Simplify types
 - Convert from the grammar form of types into type applications, sequences, and rows
 
-Pass 4: Simplify terms
+Pass 4: Adverb instance gathering
+- Also check whether any instances overlap and report those errors here
+
+Pass 5: Simplify terms
 - Eliminate some possible word forms by performing desugaring
 
-Pass 5: Demodularization
+Pass 6: Demodularization
 - All names referenced from an imported module, aliased and included locally, will be given their full explicit module path
 - The program can then be flattened into declarations alone
 
-Pass 6: Kind annotate
+Pass 7: Kind annotate
 - Explicitly annotate all known type variables (adhocs, modifies, nouns) with the inferred kind
 
-Pass 7: Type annotate
+Pass 8: Type annotate
 - Explicitly annotate all term variables and decls with their inferred types
 
-Pass 8: Dictionary passing translation
+Pass 9: Dictionary passing translation
+- Generates core typed boba, which has an untypd semantics
 
-Pass 9: Generate assembly
+Pass 10: Generate assembly
+- Placehold for something more reasonable

@@ -25,31 +25,31 @@ main ::= /"main" /"=" simple-expr
 
 export ::= /"export" name-list
 
-name-list ::= /"{" (SMALL_NAME | BIG_NAME)* /"}"
+@name-list ::= /"{" (SMALL_NAME | BIG_NAME)* /"}"
 
 
 
-data ::= (/"modify" type-variable)? /"noun" type-constructor type-variable* (/"=" data-constructor (/"|" data-constructor)*)?
+data ::= (/"tagged" type-variable)? /"data" type-constructor type-variable* (/"=" data-constructor (/"|" data-constructor)*)?
 
 data-constructor ::= term-constructor type-expression*
 
 
 
-pattern ::= /"pronoun" term-constructor term-variable* /"=" pattern-expression
+pattern ::= /"pattern" term-constructor term-variable* /"=" pattern-expression
 
 
 
-ad-hoc ::= /"adverb" term-variable /"with" simple-predicate /"=>" function-type
+ad-hoc ::= /"adhoc" term-variable /"with" simple-predicate /"=>" function-type
 
-overload ::= /"modify" single-predicate predicate-context? /"with" term-variable /"=" simple-expr
+overload ::= /"overload" single-predicate predicate-context? /"with" term-variable /"=" simple-expr
 
-deriving ::= /"derive" /"modify" single-predicate predicate-context? /"with" term-variable
+deriving ::= /"derive" /"overload" single-predicate predicate-context? /"with" term-variable
 
 predicate-context ::= /"<=" simple-predicate (/"," simple-predicate)*
 
 
 
-tag ::= /"adjective" term-constructor /"with" type-constructor
+tag ::= /"tag" term-constructor /"with" type-constructor
 
 
 
@@ -61,7 +61,7 @@ synonym ::= /"synonym" type-constructor type-variable* /"=" type-expression
 
 check ::= /"check" term-variable /":" type-expression
 
-function ::= /"verb" term-variable fixed-size-params? /"=" simple-expr
+function ::= /"fun" term-variable fixed-size-params? /"=" simple-expr
 
 recursive ::= /"recursive" /"{" function+ /"}"
 
@@ -77,7 +77,7 @@ assert-type ::= ("is-roughly" | "satisfies" | "violates")
 
 
 predicate ::= predicate-name type-expression
-            | /"(" predicate-name type-expression /")" /"..."
+            | /"(" predicate-name type-expression /")" "..."
 
 single-predicate ::= predicate-name type-expression
 
@@ -190,9 +190,9 @@ word ::= term-statement-block
 
 
 
-let-word ::= /"local" /"word" term-variable /"=" simple-expr /"in" word
+let-word ::= /"local" /"fun" term-variable /"=" simple-expr /"in" word
 
-let-rec-word ::= /"local" /"recursive" (/"word" term-variable /"=" simple-expr)+ /"in" word
+let-rec-word ::= /"local" /"recursive" (/"fun" term-variable /"=" simple-expr)+ /"in" word
 
 
 
@@ -209,7 +209,7 @@ match-word ::= /"match" match-clause+ /"otherwise" /"=>" simple-expr /";"
 
 match-clause ::= pattern-expression+ /"=>" simple-expr /";"
 
-match-all-clause ::= pattern-expression /"..." pattern-expression* /"=>" simple-expr /";"
+match-all-clause ::= pattern-expression "..." pattern-expression* /"=>" simple-expr /";"
 
 
 
@@ -239,21 +239,21 @@ function-literal ::= /"(" simple-expr /")"
 
 
 
-tuple-literal ::= /"T[" simple-expr (word /"...")? /"]"
+tuple-literal ::= /"T[" simple-expr (word "...")? /"]"
 
-list-literal ::= /"L[" simple-expr (word /"..." simple-expr)? /"]"
+list-literal ::= /"L[" simple-expr (word "..." simple-expr)? /"]"
 
-vector-literal ::= /"V[" simple-expr (word /"..." simple-expr)? /"]"
+vector-literal ::= /"V[" simple-expr (word "..." simple-expr)? /"]"
 
-slice-literal ::= /"S[" slice-literal? word /".." word /"]"
-
-
-
-dictionary-literal ::= /"D{" (word /"=" word)* (term-variable /"...")? /"}"
+slice-literal ::= /"S[" slice-literal? word ".." word /"]"
 
 
 
-record-literal ::= /"R{" (term-variable /"=" word)* (term-variable /"...")? /"}"
+dictionary-literal ::= /"D{" (word /"=" word)* (term-variable "...")? /"}"
+
+
+
+record-literal ::= /"R{" (term-variable /"=" word)* (term-variable "...")? /"}"
 
 extension ::= /"+" term-variable
 
@@ -273,7 +273,7 @@ case-word ::= /"case" /"{" (term-variable /"=>" simple-expr /";")+ /"otherwise" 
 
 
 
-bag-literal ::= /"B[" word* (word /"...")? /"]"
+bag-literal ::= /"B[" word* (word "...")? /"]"
 
 bag-get ::= /"bag-get" /"<" type-expression /">"
 
@@ -322,17 +322,17 @@ pattern-expression
       | record-pattern
       | dictionary-pattern
 
-tuple-pattern ::= /"T[" pattern-expression* (pattern-expression /"...")? /"]"
+tuple-pattern ::= /"T[" pattern-expression* (pattern-expression "...")? /"]"
 
-list-pattern ::= /"L[" pattern-expression* (pattern-expression /"..." pattern-expression*)? /"]"
+list-pattern ::= /"L[" pattern-expression* (pattern-expression "..." pattern-expression*)? /"]"
 
-vector-pattern ::= /"V[" pattern-expression* (pattern-expression /"..." pattern-expression*)? /"]"
+vector-pattern ::= /"V[" pattern-expression* (pattern-expression "..." pattern-expression*)? /"]"
 
-slice-pattern ::= /"S[" pattern-expression* (pattern-expression /"..." pattern-expression*)? /"]"
+slice-pattern ::= /"S[" pattern-expression* (pattern-expression "..." pattern-expression*)? /"]"
 
-record-pattern ::= /"R{" (term-variable /"=" pattern-expression)* (term-variable /"...")? /"}"
+record-pattern ::= /"R{" (term-variable /"=" pattern-expression)* (term-variable "...")? /"}"
 
-dictionary-pattern ::= /"D{" (term-variable /"=" pattern-expression)* (term-variable /"...")? /"}"
+dictionary-pattern ::= /"D{" (term-variable /"=" pattern-expression)* (term-variable "...")? /"}"
 
 
 

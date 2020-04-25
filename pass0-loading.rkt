@@ -9,7 +9,10 @@
 ;; String -> (BobaUnit, BobaUnits)
 (define (pass0-loading input-file-name)
   (define main-unit (load-boba-unit input-file-name))
-  (cons main-unit (load-loop (make-immutable-hash) (get-import-paths main-unit))))
+  (match main-unit
+    [`(unit ,decls... (main ,bod))
+     (cons main-unit (load-loop (make-immutable-hash) (get-import-paths main-unit)))]
+    [mod (error "File specified as entry point must contain a main: " input-file-name)]))
 
 ;; BobaUnits * [String|Remote] -> BobaUnits
 (define (load-loop program remaining-files)
@@ -55,8 +58,7 @@
    (for/list ([d decls]
               #:when (equal? 'import (car d)))
      (match d
-       [`(import ,path ,alias) path]
-       [`(import ,names ,path ,alias) path]))])
+       [`(import ,names ... ,path ,alias) path]))])
 
 (provide pass0-loading)
 (provide load-boba-unit)

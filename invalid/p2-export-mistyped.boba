@@ -1,0 +1,3 @@
+import "invalid/export-mistyped.boba" as uhoh
+
+main = uhoh::add

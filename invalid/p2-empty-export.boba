@@ -1,0 +1,3 @@
+import "invalid/empty-export.boba" as e
+
+main = 1 2 add

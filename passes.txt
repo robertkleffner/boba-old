@@ -9,32 +9,31 @@ Pass 2: Adhoc predicate checks
 - In every modify instance, every type variable in the context should appear in the head
 - In every modify instance, every head should be a type constructor applied to type variables
 
-Pass 3: Simplify types
-- Convert from the grammar form of types into type applications, sequences, and rows
-- Obviously only needs to occur for explicitly written types
-
-Pass 4: Adhoc instance gathering
+Pass 3: Adhoc instance gathering
 - Also check whether any instances overlap and report those errors here
 
-Pass 5: Desugaring
+Pass 4: Desugaring
 - Eliminate some possible word forms by performing desugaring
 
-Pass 6: Demodularization
+Pass 5: Demodularization
 - All names referenced from an imported module, aliased and included locally, will be given their full explicit module path
 - The program can then be flattened into declarations alone
 
-Pass 7: Kind annotate
+Pass 6: Kind annotate
 - Explicitly annotate all known type variables (adhocs, overloads, nouns, checks) with the inferred kind
 
-Pass 8: Type annotate
+Pass 7: Type annotate
 - Explicitly annotate all term variables and decls with their inferred types
 
-Pass 9: Dictionary passing translation
+Pass 8: Dictionary passing translation
 - Generates core typed boba, which has an untypd semantics
 
-Pass 10: Monomorphize fixed-size verbs/nouns
+Pass 9: Monomorphize fixed-size verbs/nouns
 - Should have no more fixed size types after this
 - Can we push this phase up earlier? Treat it like a macro expand? More code to typecheck...
+
+Pass 10: Monomorphize the rest
+- Should have no more polymorphism after this
 
 Pass 11: Generate assembly
 - Placehold for something more reasonable

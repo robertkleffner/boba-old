@@ -39,7 +39,7 @@ pattern ::= /"pattern" term-constructor term-variable* /"=" pattern-expression
 
 
 
-ad-hoc ::= /"adhoc" term-variable /"with" simple-predicate /"=>" function-type
+ad-hoc ::= /"adhoc" term-variable /"with" simple-predicate /"=>" type-expression
 
 overload ::= /"overload" single-predicate predicate-context? /"with" term-variable /"=" simple-expr
 
@@ -83,64 +83,34 @@ single-predicate ::= predicate-name type-expression
 
 simple-predicate ::= predicate-name type-variable
 
-type-expression
-    ::= function-type
-      | tuple-type
-      | list-type
-      | vector-type
-      | slice-type
-      | dictionary-type
-      | record-type
-      | variant-type
-      | bag-type
-      | union-type
-      | reference-type
-      | type-application
+type-expression ::= "(" type-expression type-expression ")"
+                  | /"<" (tag-type-expression | fixed-size-type-expression) /">"
+                  | /"[" (type-sequence | field-sequence | effect-sequence) /"]"
+                  | qualified-type-constructor
+                  | type-constructor
+                  | type-variable
+                  | primitive-type
 
 type-sequence ::= (type-expression "...")? type-expression*
-
-function-type ::= /"(" type-sequence /"-->" type-sequence /")"
-                | /"(" type-sequence /"-[" effect (/"," effect)* /"]->" type-sequence /")"
-
-tuple-type ::= /"T[" type-sequence /"]"
-
-list-type ::= /"L[" type-expression /"]"
-
-vector-type ::= /"V[" type-expression /"]" /"<" fixed-size-type-expression /">"
-
-slice-type ::= /"S[" type-expression /"]" /"<" fixed-size-type-expression /">"
-
-dictionary-type ::= /"D{" type-expression /"," type-expression /"}"
-
-record-type ::= /"R{" (field (/"," field)*)? /"}"
-
-variant-type ::= /"V{" (field (/"," field)*)? /"}"
-
-bag-type ::= /"B[" type-expression* /"]"
-
-union-type ::= /"U[" type-expression* /"]"
-
-reference-type ::= /"@" type-expression
-
-type-application ::= "(" type-application type-expression ")"
-                   | type-application /"<" tag-type-expression /">"
-                   | qualified-type-constructor
-                   | type-constructor
-                   | type-variable
-                   | primitive-type
 
 qualified-type-constructor ::= term-variable /"::" type-constructor
 
 primitive-type ::= "Bool"
                  | "Char"
                  | "I8" | "U8" | "I16" | "U16" | "I32" | "U32" | "I64" | "U64" | "F32" | "F64" | "ISize" | "USize"
+                 | "-->"
+                 | "Tuple" | "List" | "Vector" | "Slice" | "Dict" | "Record" | "Variant" | "Bag" | "Union"
+                 | "Ref"
 
 effect ::= operator-name type-expression*
 
+effect-sequence ::= type-variable /"..." (effect (/"," effect)*)?
+
 field ::= term-variable /":" type-expression
 
-fixed-size-type-expression ::= fixed-size-variable (/"+" fixed-size-variable)*
-                             | INTEGER (/"+" fixed-size-variable (/"+" fixed-size-variable)*)?
+field-sequence ::= type-variable /"..." (field (/"," field)*)?
+
+fixed-size-type-expression ::= INTEGER (/"+" fixed-size-variable (/"+" fixed-size-variable)*)?
 
 fixed-size-variable ::= INTEGER? type-variable
 

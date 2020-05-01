@@ -166,7 +166,7 @@ let-rec-word ::= /"local" /"recursive" (/"fun" term-variable /"=" simple-expr)+ 
 
 
 
-handle-word ::= /"handle" term-variable term-statement-block /"with" /"{" handler* return? /"}"
+handle-word ::= /"handle" term-variable* term-statement-block /"with" /"{" handler* return? /"}"
 
 handler ::= operator-name term-variable* /"=>" word /";"
 

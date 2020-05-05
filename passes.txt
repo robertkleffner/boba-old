@@ -4,9 +4,12 @@ Pass 0: Load the whole program into memory
 Pass 1: Import/export name-list check
 - For each import clause with explicit names, import name list is cross-referenced with the associated unit to check all explicitly imported named are actually defined
 - Likewise, each export clause is cross-reference with the decls of the owning unit to make sure it defines all exported names
+- Make sure that each imported name, even if it exists in the referenced module, is explicitly exported
 - Disallow duplicates in imported and exported name lists
 - Warn if an import alias is defined twice (one overshadows the other)
 - Warn if an explicitly imported name is defined twice (one overshadows the other)
+- Find unbound names in types
+- Find unbound names in terms
 
 Pass 2: Adhoc predicate checks
 - In every modify instance, every type variable in the context should appear in the head

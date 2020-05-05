@@ -1,13 +1,15 @@
 #lang brag
 
-unit ::= import* declaration* (main | export)
+unit ::= imports declarations (main | export)
+imports ::= import*
+declarations ::= declaration*
 
 import ::= /"import" (STRING | remote) /"as" SMALL_NAME
          | /"import" name-list (STRING | remote) /"as" SMALL_NAME
 
 remote ::= SMALL_NAME /"." SMALL_NAME /"." SMALL_NAME /":" INTEGER /"." INTEGER /"." INTEGER
 
-declaration
+@declaration
     ::= data
       | pattern
       | ad-hoc
@@ -29,7 +31,9 @@ export ::= /"export" name-list
 
 
 
-data ::= (/"tagged" type-variable)? /"data" type-constructor type-variable* (/"=" data-constructor (/"|" data-constructor)*)?
+data ::= (/"tagged" type-variable)? /"data" type-constructor data-params (/"=" data-constructor (/"|" data-constructor)*)?
+
+data-params ::= type-variable*
 
 data-constructor ::= term-constructor type-expression*
 
@@ -124,12 +128,12 @@ tag-constructor ::= type-constructor (/"^" INTEGER)?
 
 term-statement-block ::= /"{" term-statement* /"}"
 
-term-statement ::= /"var" pattern-expression* /"<=" simple-expr /";"
+term-statement ::= /"let" pattern-expression* /"<=" simple-expr /";"
                  | simple-expr ";"
 
 simple-expr ::= word*
 
-word ::= term-statement-block
+@word ::= term-statement-block
        | let-word
        | let-rec-word
        | handle-word
@@ -168,7 +172,7 @@ let-rec-word ::= /"local" /"recursive" (/"fun" term-variable /"=" simple-expr)+ 
 
 handle-word ::= /"handle" term-variable* term-statement-block /"with" /"{" handler* return? /"}"
 
-handler ::= operator-name term-variable* /"=>" word /";"
+handler ::= operator-name term-variable* /"=>" simple-expr /";"
 
 return ::= /"afterward" simple-expr /";"
 
@@ -229,9 +233,9 @@ extension ::= /"+" term-variable
 
 restriction ::= /"-" term-variable
 
-selection ::= /"->" (term-variable /".")* term-variable
+selection ::= /"<-" (term-variable /".")* term-variable
 
-update ::= /"<-" (term-variable /".")* term-variable
+update ::= /"->" (term-variable /".")* term-variable
 
 
 

@@ -10,7 +10,7 @@
 (define (pass0-loading input-file-name)
   (define main-unit (load-boba-unit input-file-name))
   (match main-unit
-    [`(unit ,decls... (main ,bod))
+    [`(unit ,imports ,decls (main ,bod))
      (cons main-unit (load-loop (make-immutable-hash) (get-import-paths main-unit)))]
     [mod (error "File specified as entry point must contain a main: " input-file-name)]))
 
@@ -54,10 +54,10 @@
 ;; BobaUnit -> [String|Remote]
 ;; Extract all the import paths from the boba AST.
 (define/match (get-import-paths boba-unit)
-  [(`(unit ,decls ...))
-   (for/list ([d decls]
-              #:when (equal? 'import (car d)))
-     (match d
+  [(`(unit (imports ,is ...) ,decls ,body))
+   (for/list ([i is]
+              #:when (equal? 'import (car i)))
+     (match i
        [`(import ,names ... ,path ,alias) path]))])
 
 (provide pass0-loading)

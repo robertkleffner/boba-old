@@ -124,7 +124,7 @@ tag-constructor ::= type-constructor (/"^" INTEGER)?
 
 term-statement-block ::= /"{" term-statement* /"}"
 
-term-statement ::= /"var" pattern-expression* /"<=" simple-expr /";"
+term-statement ::= /"let" pattern-expression* /"<=" simple-expr /";"
                  | simple-expr ";"
 
 simple-expr ::= word*
@@ -166,9 +166,9 @@ let-rec-word ::= /"local" /"recursive" (/"fun" term-variable /"=" simple-expr)+ 
 
 
 
-handle-word ::= /"handle" term-variable term-statement-block /"with" /"{" handler* return? /"}"
+handle-word ::= /"handle" term-variable* term-statement-block /"with" /"{" handler* return? /"}"
 
-handler ::= operator-name term-variable* /"=>" word /";"
+handler ::= operator-name term-variable* /"=>" simple-expr /";"
 
 return ::= /"afterward" simple-expr /";"
 
@@ -229,9 +229,9 @@ extension ::= /"+" term-variable
 
 restriction ::= /"-" term-variable
 
-selection ::= /"->" (term-variable /".")* term-variable
+selection ::= /"<-" (term-variable /".")* term-variable
 
-update ::= /"<-" (term-variable /".")* term-variable
+update ::= /"->" (term-variable /".")* term-variable
 
 
 

@@ -33,7 +33,7 @@
      ["is" (token "is" lexeme)]
      ["is-not" (token "is-not" lexeme)]
      ["check" (token "check" lexeme)]
-     ["var" (token "var" lexeme)]
+     ["let" (token "let" lexeme)]
      ["local" (token "local" lexeme)]
      ["in" (token "in" lexeme)]
      ["handle" (token "handle" lexeme)]
@@ -52,6 +52,7 @@
      ["new@" (token "new@" lexeme)]
      ["get@" (token "get@" lexeme)]
      ["put@" (token "put@" lexeme)]
+     ["do" (token "do" lexeme)]
 
      [(:seq (:or "for/" "for*/")
             (:or "list" "lists" "vector" "tuple" "dict" "and" "or" "sum" "product" "first" "last" "foldl" "foldr"))

@@ -26,7 +26,7 @@
   (match remaining-files
     [(list-rest next rem)
      (if (hash-has-key? program next)
-         (cons program rem)
+         (values program rem)
          (let ([boba-unit (load-nonmain-boba-unit next)])
            (values (hash-set program next boba-unit) (append rem (get-import-paths boba-unit)))))]
     [(list) (values program (list))]))
@@ -35,7 +35,7 @@
 ;; Load and parse the boba file at the given local/remote path. Throw an error if it includes a 'main' definition.
 (define (load-nonmain-boba-unit unit-path)
   (match (load-boba-unit unit-path)
-    [`(unit ,a ... (main ,bod))
+    [`(unit ,imports ,decls (main ,bod))
      (error "Cannot load a module with another 'main' declaration: " unit-path)]
     [mod mod]))
 

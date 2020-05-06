@@ -1,3 +1,4 @@
+import { add } "example/importee.boba" as i
 import "example/importee.boba" as i
 
 main = i::add

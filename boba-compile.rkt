@@ -13,6 +13,7 @@
     (define pass1-results (pass1-convert pass0-results))
     (displayln "Pass 1 conversion completed successfully.")
     (check-exports pass1-results)
+    (check-imports pass1-results)
     (when (equal? to-phase "1")
       (return pass1-results))
     pass1-results))

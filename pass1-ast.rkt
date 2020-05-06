@@ -11,6 +11,10 @@
   (Pair P1-Boba-Main (Immutable-HashTable (U String P1-Remote-Path) P1-Boba-Unit)))
 (provide P1-Boba-Program)
 
+(define-type P1-Boba-Units
+  (Immutable-HashTable (U String P1-Remote-Path) P1-Boba-Unit))
+(provide P1-Boba-Units)
+
 (define-struct P1-Boba-Unit
   ([imports : (Listof P1-Import)]
    [declarations : (Listof P1-Declaration)]
@@ -70,6 +74,7 @@
      P1-Recursive
      P1-Test
      P1-Law))
+(provide P1-Declaration)
 
 
 
@@ -79,11 +84,13 @@
    [params : (Listof String)]
    [constructors : (Listof P1-Constructor)])
   #:transparent)
+(provide (struct-out P1-Data))
 
 (define-struct P1-Constructor
   ([name : String]
    [elems : (Listof P1-Type)])
   #:transparent)
+(provide (struct-out P1-Constructor))
 
 
 
@@ -92,14 +99,17 @@
    [params : (Listof String)]
    [pattern : P1-Pattern])
   #:transparent)
+(provide (struct-out P1-Pattern-Synonym))
 
 
 
 (define-struct P1-Adhoc
   ([name : String]
-   [predicate : P1-Predicate]
+   [predicate-name : String]
+   [qualified-var : String]
    [type : P1-Type])
   #:transparent)
+(provide (struct-out P1-Adhoc))
 
 (define-struct P1-Overload
   ([name : String]
@@ -107,12 +117,14 @@
    [context : (Listof P1-Type)]
    [body : (Listof P1-Word)])
   #:transparent)
+(provide (struct-out P1-Overload))
 
 (define-struct P1-Derive
   ([name : String]
    [instance : P1-Type]
    [context : (Listof P1-Type)])
   #:transparent)
+(provide (struct-out P1-Derive))
 
 
 
@@ -120,6 +132,7 @@
   ([name : String]
    [tag : String])
   #:transparent)
+(provide (struct-out P1-Tag))
 
 
 
@@ -128,18 +141,21 @@
    [params : (Listof String)]
    [type : P1-Type])
   #:transparent)
+(provide (struct-out P1-Type-Synonym))
 
 (define-struct P1-Effect-Synonym
   ([name : String]
    [params : (Listof String)]
    [effects : (Listof P1-Effect)])
   #:transparent)
+(provide (struct-out P1-Effect-Synonym))
 
 (define-struct P1-Predicate-Synonym
   ([name : String]
    [param : String]
    [predicates : (Listof P1-Predicate)])
   #:transparent)
+(provide (struct-out P1-Predicate-Synonym))
 
 
 
@@ -170,6 +186,7 @@
    [type : String]
    [compare : (Opt P1-Block)])
   #:transparent)
+(provide (struct-out P1-Test))
 
 (define-struct P1-Law
   ([name : String]
@@ -179,14 +196,17 @@
    [type : String]
    [compare : (Opt P1-Block)])
   #:transparent)
+(provide (struct-out P1-Law))
 
 
 
 (define-struct P1-Predicate
   ([name : String]
+   [alias : (Opt String)]
    [type : P1-Type]
    [dotted : Boolean])
   #:transparent)
+(provide (struct-out P1-Predicate))
 
 (define-type P1-Type
   (U P1-Type-App
@@ -199,11 +219,13 @@
      P1-Abelian-Cons
      P1-Type-Cons
      P1-Type-Var))
+(provide P1-Type)
 
 (define-struct P1-Type-App
   ([left : P1-Type]
    [right : P1-Type])
   #:transparent)
+(provide P1-Type-App)
 
 (define-struct P1-Tag-Type
   ([variables : (Listof P1-Abelian-Var)]

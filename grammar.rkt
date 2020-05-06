@@ -43,7 +43,7 @@ pattern ::= /"pattern" term-constructor term-variable* /"=" pattern-expression
 
 
 
-ad-hoc ::= /"adhoc" term-variable /"with" simple-predicate /"=>" type-expression
+ad-hoc ::= /"adhoc" term-variable /"with" predicate-name term-variable /"=>" type-expression
 
 overload ::= /"overload" single-predicate predicate-context? /"with" term-variable /"=" simple-expr
 
@@ -322,6 +322,7 @@ fixed-size-term-factor ::= INTEGER | term-variable | INTEGER term-variable
 property-name ::= PROPERTY_NAME
 operator-name ::= OPERATOR_NAME
 predicate-name ::= PREDICATE_NAME
+qualified-predicate-name ::= term-variable /"::" PREDICATE_NAME
 type-variable ::= SMALL_NAME
 term-variable ::= SMALL_NAME
 type-constructor ::= BIG_NAME

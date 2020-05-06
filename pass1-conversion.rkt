@@ -15,7 +15,7 @@
 (provide pass1-convert)
 
 (define/match (p1-unit boba-unit)
-  [(`(unit (imports ,is ...) (declarations ,ds ...) (export ,ns)))
+  [(`(unit (imports ,is ...) (declarations ,ds ...) (export ,ns ...)))
    (P1-Boba-Unit
     (map p1-import is)
     (map p1-decl ds)

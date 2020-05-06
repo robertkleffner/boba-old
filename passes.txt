@@ -1,45 +1,46 @@
 Pass 0: Load the whole program into memory
 - Make sure exactly one unit with a `main` declartion is loaded
 
-Pass 1: Import/export name-list check
-- For each import clause with explicit names, import name list is cross-referenced with the associated unit to check all explicitly imported named are actually defined
-- Likewise, each export clause is cross-reference with the decls of the owning unit to make sure it defines all exported names
-- Make sure that each imported name, even if it exists in the referenced module, is explicitly exported
-- Disallow duplicates in imported and exported name lists
-- Warn if an import alias is defined twice (one overshadows the other)
-- Warn if an explicitly imported name is defined twice (one overshadows the other)
+Pass 1: Basic sanity checks
+- Disallow cyclic dependencies
+- Import/export checks
+    - For each import clause with explicit names, import name list is cross-referenced with the associated unit to check all explicitly imported named are actually defined
+    - Likewise, each export clause is cross-reference with the decls of the owning unit to make sure it defines all exported names
+    - Make sure that each imported name, even if it exists in the referenced module, is explicitly exported
+    - Disallow duplicates in imported and exported name lists
+    - Warn if an import alias is defined twice (one overshadows the other)
+    - Warn if an explicitly imported name is defined twice (one overshadows the other)
 - Find unbound names in types
 - Find unbound names in terms
+- Adhoc checks
+    - In every modify instance, every type variable in the context should appear in the head
+    - In every modify instance, every head should be a type constructor applied to type variables
 
-Pass 2: Adhoc predicate checks
-- In every modify instance, every type variable in the context should appear in the head
-- In every modify instance, every head should be a type constructor applied to type variables
-
-Pass 3: Adhoc instance gathering
+Pass 2: Adhoc instance gathering
 - Also check whether any instances overlap and report those errors here
 
-Pass 4: Desugaring
+Pass 3: Desugaring
 - Eliminate some possible word forms by performing desugaring
 
-Pass 5: Demodularization
+Pass 4: Demodularization
 - All names referenced from an imported module, aliased and included locally, will be given their full explicit module path
 - The program can then be flattened into declarations alone
 
-Pass 6: Kind annotate
+Pass 5: Kind annotate
 - Explicitly annotate all known type variables (adhocs, overloads, nouns, checks) with the inferred kind
 
-Pass 7: Type annotate
+Pass 6: Type annotate
 - Explicitly annotate all term variables and decls with their inferred types
 
-Pass 8: Dictionary passing translation
+Pass 7: Dictionary passing translation
 - Generates core typed boba, which has an untypd semantics
 
-Pass 9: Monomorphize fixed-size verbs/nouns
+Pass 8: Monomorphize fixed-size verbs/nouns
 - Should have no more fixed size types after this
 - Can we push this phase up earlier? Treat it like a macro expand? More code to typecheck...
 
-Pass 10: Monomorphize the rest
+Pass 9: Monomorphize the rest
 - Should have no more polymorphism after this
 
-Pass 11: Generate assembly
+Pass 10: Generate computed goto C
 - Placehold for something more reasonable

@@ -86,7 +86,19 @@
   (warn-shadowed-explicit-imports unit-name imports)
   (warn-shadowed-import-alias unit-name imports))
 
-(define (check-explicit-imports-defined unit-name units imports) (void))
+(: check-explicit-imports-defined (-> P1-Import-Path P1-Boba-Units P1-Import Void))
+(define (check-explicit-imports-defined unit-name units import)
+  (define explicits (P1-Import-names import))
+  (define imported (hash-ref units (P1-Import-path import)))
+  (define exported (P1-Boba-Unit-exports imported))
+  (for ([e explicits])
+    (when (not (member e exported))
+      (error (string-append "Unit '"
+                            (boba-path->string unit-name)
+                            "' imports unexported name '"
+                            e
+                            "' from unit '"
+                            (boba-path->string (P1-Import-path import)))))))
 
 (: warn-duplicate-explicit-imports (-> P1-Import-Path P1-Import Void))
 (define (warn-duplicate-explicit-imports unit-name import)
@@ -101,7 +113,16 @@
                                     "': ")
                      duplicated))))
 
-(define (warn-shadowed-explicit-imports unit-name imports) (void))
+(: warn-shadowed-explicit-imports (-> P1-Import-Path (Listof P1-Import) Void))
+(define (warn-shadowed-explicit-imports unit-name imports)
+  (define explicits (append* (map (inst remove-duplicates String) (map P1-Import-names imports))))
+  (define duplicated (get-duplicates explicits))
+  (when (not (null? duplicated))
+    (displayln
+     (string-append* (string-append "Unit '"
+                                    (boba-path->string unit-name)
+                                    "' imports shadowed explicit name: ")
+                     duplicated))))
 
 (: warn-shadowed-import-alias (-> P1-Import-Path (Listof P1-Import) Void))
 (define (warn-shadowed-import-alias unit-name imports)

@@ -11,7 +11,7 @@
   (cons
    (p1-unit (car program))
    (for/hash ([(k v) (in-hash (cdr program))])
-     (values k (p1-unit v)))))
+     (values (p1-convert-import-path k) (p1-unit v)))))
 (provide pass1-convert)
 
 (define/match (p1-unit boba-unit)

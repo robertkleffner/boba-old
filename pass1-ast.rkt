@@ -65,6 +65,8 @@
   (U P1-Data
      P1-Pattern-Synonym
      P1-Adhoc
+     P1-Overload
+     P1-Derive
      P1-Tag
      P1-Type-Synonym
      P1-Effect-Synonym
@@ -622,6 +624,7 @@
 
 (define-struct P1-Cons-Pat
   ([constructor : String]
+   [alias : (Opt String)]
    [elems : (Listof P1-Pattern)])
   #:transparent)
 

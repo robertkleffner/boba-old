@@ -1,9 +1,6 @@
 #lang typed/racket
 
-(define-struct None () #:transparent)
-(define-struct (A) Some ([v : A]) #:transparent)
-(provide (struct-out None) (struct-out Some))
-(define-type (Opt A) (U None (Some A)))
+(require "./common.rkt")
 
 
 
@@ -34,13 +31,13 @@
 (define-type P1-Import-Path (U String P1-Remote-Path))
 (provide P1-Import-Path)
 
-(: boba-path->string (-> P1-Import-Path String))
-(define (boba-path->string path)
+(: p1-boba-path->string (-> P1-Import-Path String))
+(define (p1-boba-path->string path)
   (match path
     [(P1-Remote-Path org proj name major minor patch)
      (string-append org "." proj "." name ":" (number->string major) "." (number->string minor) "." (number->string patch))]
     [(? string? x) x]))
-(provide boba-path->string)
+(provide p1-boba-path->string)
 
 (define-struct P1-Remote-Path
   ([org : String]
@@ -63,6 +60,7 @@
 
 (define-type P1-Declaration
   (U P1-Data
+     P1-Data-Rec
      P1-Pattern-Synonym
      P1-Adhoc
      P1-Overload
@@ -87,6 +85,11 @@
    [constructors : (Listof P1-Constructor)])
   #:transparent)
 (provide (struct-out P1-Data))
+
+(define-struct P1-Data-Rec
+  ([mutuals : (Listof P1-Data)])
+  #:transparent)
+(provide (struct-out P1-Data-Rec))
 
 (define-struct P1-Constructor
   ([name : String]
@@ -115,16 +118,16 @@
 
 (define-struct P1-Overload
   ([name : String]
-   [instance : P1-Type]
-   [context : (Listof P1-Type)]
+   [instance : P1-Predicate]
+   [context : (Listof P1-Predicate)]
    [body : (Listof P1-Word)])
   #:transparent)
 (provide (struct-out P1-Overload))
 
 (define-struct P1-Derive
   ([name : String]
-   [instance : P1-Type]
-   [context : (Listof P1-Type)])
+   [instance : P1-Predicate]
+   [context : (Listof P1-Predicate)])
   #:transparent)
 (provide (struct-out P1-Derive))
 
@@ -217,8 +220,6 @@
      P1-Type-Seq
      P1-Field-Type
      P1-Effect-Seq
-     P1-Abelian-Var
-     P1-Abelian-Cons
      P1-Type-Cons
      P1-Type-Var))
 (provide P1-Type)
@@ -227,62 +228,73 @@
   ([left : P1-Type]
    [right : P1-Type])
   #:transparent)
-(provide P1-Type-App)
+(provide (struct-out P1-Type-App))
 
 (define-struct P1-Tag-Type
   ([variables : (Listof P1-Abelian-Var)]
    [constructor : (Listof P1-Abelian-Cons)])
   #:transparent)
+(provide (struct-out P1-Tag-Type))
 
 (define-struct P1-Fixed-Size-Type
   ([variables : (Listof P1-Abelian-Var)]
    [constant : Integer])
   #:transparent)
+(provide (struct-out P1-Fixed-Size-Type))
 
 (define-struct P1-Type-Seq
   ([elems : (Listof P1-Type)]
    [dotted : (Opt P1-Type)])
   #:transparent)
+(provide (struct-out P1-Type-Seq))
 
 (define-struct P1-Field-Seq
   ([fields : (Listof P1-Field-Type)]
    [dotted : String])
   #:transparent)
+(provide (struct-out P1-Field-Seq))
 
 (define-struct P1-Field-Type
   ([field : String]
    [type : P1-Type])
   #:transparent)
+(provide (struct-out P1-Field-Type))
 
 (define-struct P1-Effect-Seq
   ([effects : (Listof P1-Effect)]
    [dotted : String])
   #:transparent)
+(provide (struct-out P1-Effect-Seq))
 
 (define-struct P1-Effect
   ([op : String]
    [params : (Listof P1-Type)])
   #:transparent)
+(provide (struct-out P1-Effect))
 
 (define-struct P1-Abelian-Var
   ([name : String]
    [exponent : Integer])
   #:transparent)
+(provide (struct-out P1-Abelian-Var))
 
 (define-struct P1-Abelian-Cons
   ([name : String]
    [alias : (Opt String)]
    [exponent : Integer])
   #:transparent)
+(provide (struct-out P1-Abelian-Cons))
 
 (define-struct P1-Type-Cons
   ([name : String]
    [alias : (Opt String)])
   #:transparent)
+(provide (struct-out P1-Type-Cons))
 
 (define-struct P1-Type-Var
   ([name : String])
   #:transparent)
+(provide (struct-out P1-Type-Var))
 
 
 
@@ -329,19 +341,23 @@
      Char
      Integer
      Flonum))
+(provide P1-Word)
      
 
 
 (define-struct P1-Block
   ([statements : (Listof P1-Statement)])
   #:transparent)
+(provide (struct-out P1-Block))
 
 (define-type P1-Statement (U P1-Let-Statement (Listof P1-Word)))
+(provide P1-Statement)
 
 (define-struct P1-Let-Statement
   ([patterns : (Listof P1-Pattern)]
    [body : (Listof P1-Word)])
   #:transparent)
+(provide (struct-out P1-Let-Statement))
 
 
 
@@ -587,7 +603,8 @@
 
 
 (define-struct P1-Untag
-  ([name : String])
+  ([name : String]
+   [alias : (Opt String)])
   #:transparent)
 
 
@@ -612,6 +629,7 @@
      Char
      Integer
      Flonum))
+(provide P1-Pattern)
 
 (define-struct P1-Named-Pat
   ([name : String]

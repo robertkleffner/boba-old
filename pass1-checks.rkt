@@ -32,7 +32,7 @@
                                (get-decl-names boba-unit)
                                (list->set (P1-Boba-Unit-exports boba-unit)))
   (if (null? (P1-Boba-Unit-exports boba-unit))
-      (displayln (string-append "Unit '" (boba-path->string unit-name) "' exports nothing."))
+      (displayln (string-append "Unit '" (p1-boba-path->string unit-name) "' exports nothing."))
       (warn-duplicate-exports unit-name (P1-Boba-Unit-exports boba-unit))))
 
 (: warn-duplicate-exports (-> P1-Import-Path (Listof String) Void))
@@ -40,14 +40,14 @@
   (define duplicated (get-duplicates exports))
   (when (not (null? duplicated))
     (displayln
-     (string-append* (string-append "Unit '" (boba-path->string unit-name) "' has duplicate exports: ") duplicated))))
+     (string-append* (string-append "Unit '" (p1-boba-path->string unit-name) "' has duplicate exports: ") duplicated))))
 
 (: check-exports-against-decls (-> P1-Import-Path (Setof String) (Setof String) Void))
 (define (check-exports-against-decls unit-name declared exported)
   (define not-declared (set-subtract exported declared))
   (when (not (set-empty? not-declared))
     (error
-     (string-append* (string-append "Unit '" (boba-path->string unit-name) "' does not declare exported names: ")
+     (string-append* (string-append "Unit '" (p1-boba-path->string unit-name) "' does not declare exported names: ")
                      (set->list not-declared)))))
 
 (: get-decl-names (-> P1-Boba-Unit (Setof String)))
@@ -57,7 +57,12 @@
 (: get-decl-name (-> P1-Declaration (Listof String)))
 (define (get-decl-name decl)
   (match decl
-    [(P1-Data name _ _ _) (list name)]
+    [(P1-Data name _ _ ctors)
+     (cons name
+           (for/list : (Listof String) ([c ctors])
+             (match c
+               [(P1-Constructor name _) name])))]
+    [(P1-Data-Rec mutuals) (append* (map get-decl-name mutuals))]
     [(P1-Pattern-Synonym name _ _) (list name)]
     [(P1-Adhoc name predicate-name _ _) (list name predicate-name)]
     [(P1-Tag name tag) (list name tag)]
@@ -94,11 +99,11 @@
   (for ([e explicits])
     (when (not (member e exported))
       (error (string-append "Unit '"
-                            (boba-path->string unit-name)
+                            (p1-boba-path->string unit-name)
                             "' imports unexported name '"
                             e
                             "' from unit '"
-                            (boba-path->string (P1-Import-path import)))))))
+                            (p1-boba-path->string (P1-Import-path import)))))))
 
 (: warn-duplicate-explicit-imports (-> P1-Import-Path P1-Import Void))
 (define (warn-duplicate-explicit-imports unit-name import)
@@ -107,9 +112,9 @@
   (when (not (null? duplicated))
     (displayln
      (string-append* (string-append "Unit '"
-                                    (boba-path->string unit-name)
+                                    (p1-boba-path->string unit-name)
                                     "' has duplicate imports from '"
-                                    (boba-path->string (P1-Import-path import))
+                                    (p1-boba-path->string (P1-Import-path import))
                                     "': ")
                      duplicated))))
 
@@ -120,7 +125,7 @@
   (when (not (null? duplicated))
     (displayln
      (string-append* (string-append "Unit '"
-                                    (boba-path->string unit-name)
+                                    (p1-boba-path->string unit-name)
                                     "' imports shadowed explicit name: ")
                      duplicated))))
 
@@ -130,6 +135,6 @@
   (when (not (null? duplicated))
     (displayln
      (string-append* (string-append "Unit '"
-                                    (boba-path->string unit-name)
+                                    (p1-boba-path->string unit-name)
                                     "' defines shadowed unit aliases: ")
                      duplicated))))

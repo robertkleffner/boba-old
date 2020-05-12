@@ -10,21 +10,23 @@ Pass 1: Basic sanity checks
     - Disallow duplicates in imported and exported name lists
     - Warn if an import alias is defined twice (one overshadows the other)
     - Warn if an explicitly imported name is defined twice (one overshadows the other)
+    - Data definition should not define the same constructor twice
+    - Recursive groups should not define the same name twice
 - Find unbound names in types
 - Find unbound names in terms
 - Adhoc checks
     - In every modify instance, every type variable in the context should appear in the head
     - In every modify instance, every head should be a type constructor applied to type variables
 
-Pass 2: Adhoc instance gathering
+Pass 2: Demodularization
+- All names referenced from an imported module, aliased and included locally, will be given their full explicit module path
+- Beneficial side-effect: will error out on undefined names
+
+Pass 3: Adhoc instance gathering
 - Also check whether any instances overlap and report those errors here
 
-Pass 3: Desugaring
+Pass 4: Desugaring
 - Eliminate some possible word forms by performing desugaring
-
-Pass 4: Demodularization
-- All names referenced from an imported module, aliased and included locally, will be given their full explicit module path
-- The program can then be flattened into declarations alone
 
 Pass 5: Kind annotate
 - Explicitly annotate all known type variables (adhocs, overloads, nouns, checks) with the inferred kind

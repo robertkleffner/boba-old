@@ -11,6 +11,7 @@ remote ::= SMALL_NAME /"." SMALL_NAME /"." SMALL_NAME /":" INTEGER /"." INTEGER 
 
 @declaration
     ::= data
+      | data-rec
       | pattern
       | ad-hoc
       | overload
@@ -36,6 +37,8 @@ data ::= (/"tagged" type-variable)? /"data" type-constructor data-params (/"=" d
 data-params ::= type-variable*
 
 data-constructor ::= term-constructor type-expression*
+
+data-rec ::= /"recursive" /"{" data+ /"}"
 
 
 
@@ -321,8 +324,7 @@ fixed-size-term-expression ::= (fixed-size-term-factor /"+")* fixed-size-term-fa
 fixed-size-term-factor ::= INTEGER | term-variable | INTEGER term-variable
 property-name ::= PROPERTY_NAME
 operator-name ::= OPERATOR_NAME
-predicate-name ::= PREDICATE_NAME
-qualified-predicate-name ::= term-variable /"::" PREDICATE_NAME
+predicate-name ::= (term-variable /"::")? PREDICATE_NAME
 type-variable ::= SMALL_NAME
 term-variable ::= SMALL_NAME
 type-constructor ::= BIG_NAME

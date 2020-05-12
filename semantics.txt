@@ -1,0 +1,148 @@
+W ::= primW
+    | x
+    | x!
+    | X
+    | var x+ in W* ;
+    | ( W* )
+    | do
+    | let X = W* in W* ;
+    | handle x* { W* }
+      with {
+          (x! x* => W* ;)*
+          return => W*
+      }
+
+V ::= primV
+    | (S*, W*)          ; closure
+    | (x*, S*, V*, W*)  ; continuation
+
+S ::= x -> V
+    | X -> (S*, W*)
+    | X -> (x*, S*, V*, W*)
+
+F ::= [S*]
+
+I ::= W
+    | popf
+    | ops {
+          S,
+          (x! x => (S*, W*),)*
+          return => (S*, W*)
+      }
+
+M ::= < V*, F*, W* >
+
+
+
+< V..., F..., 0 W... >  ==>  < 0 V..., F..., W... >
+
+< V..., ...[x -> v1]..., x W... >  ==>  < v1 V..., ...[x -> v1]..., W... >
+
+< V..., ...[X -> (S, W1...)]..., X W... >  ==>  < V..., [S] ...[X -> (S, W1...)]..., w... popf W... >
+
+< V..., F..., (W1...) W2... >  ==>  < closure(F...,W1...) V..., F..., W2... >
+
+< (S, W1...) V..., F..., do W2... >  ==>  < V..., [S] F..., W1... W2... >
+
+< v1 ... vn V..., F..., var x1 ... xn in W1... ; W2... > ==>  < V..., [x1 -> v1, ... , xn -> vn] F..., W1... popf W2... >
+
+< V..., F..., let X = W1... in W2... ; W3... >  ==>  < V..., [X -> closure(F...,W1...)] F..., W2... popf W3... >
+
+
+
+< v1 ... vn V1..., ...[X -> (x1 ... xn, S1, V2, W1... ops { S2, c... })]..., X W2... >  ==>
+< V1... V2...,
+  S1 ...[X -> (x1 ... xn, S1, V2, W1... ops { S2, c... })]...,
+  W1... ops { [x1 -> v1, ... , xn -> vn], c... } popf W2... >
+
+< v1 ... vn V..., F..., handle x1 ... xn { W1... } with { (xi! xp... => Wi...)* return => Wr... } W2... >
+< V...,
+  F...,
+  W1... ops { [x1 -> v1, ... , xn -> vn], opclosure(F...,xi! xp... => Wi...)*, closure(F...,Wr...) } W2... >
+
+< v1 ... vn V..., F..., x! W1... ops { S1, x! x1 ... xn => (S2, W2...), c... } W3... >  ==>
+< ,
+  [resume -> (S1.keys,capture(F...,W1...),V...,W1... ops { S1, x! x1 ... xn => (S2, W2...), c... }), x1 -> v1, ... , xn -> vn, S2] F...,
+  W2... popf W3... >
+
+< V..., F..., ops { S1, ... return => (S2, W1...) } W2... >  ==>
+< V..., [S1,S2] F..., W1... popf W2... >
+
+
+
+
+OBJECTIVE: remove all instances of V from I (i.e., make instructions not reference handler/return closures)
+Part 1: Make return term separate in continuation value
+
+< v1 ... vn V1..., ...[X -> (x1 ... xn, S1, V2, W1..., ops { S2, c... })]..., X W2... >  ==>
+< V1... V2...,
+  S1 ...[X -> (x1 ... xn, S1, V2, W1..., ops { S2, c... })]...,
+  W1... ops { [x1 -> v1, ... , xn -> vn], c... } popf W2... >
+
+< v1 ... vn V..., F..., handle x1 ... xn { W1... } with { (xi! xp... => Wi...)* return => Wr... } W2... >
+< V...,
+  F...,
+  W1... ops { [x1 -> v1, ... , xn -> vn], opclosure(F...,xi! xp... => Wi...)*, closure(F...,Wr...) } W2... >
+
+< v1 ... vn V..., F..., x! W1... ops { S1, x! x1 ... xn => (S2, W2...), c... } W3... >  ==>
+< ,
+  [resume -> (S1.keys,capture(F...,W1...),V...,W1...,ops { S1, x! x1 ... xn => (S2, W2...), c... }), x1 -> v1, ... , xn -> vn, S2] F...,
+  W2... popf W3... >
+
+< V..., F..., ops { S1, ... return => (S2, W1...) } W2... >  ==>
+< V..., [S1,S2] F..., W1... popf W2... >
+
+
+
+
+
+OBJECTIVE: remove all instances of V from I (i.e., make instructions not reference handler/return closures)
+Part 2: Use a stack of handlers, and store pieces of the stack in the continuation value.
+
+< v1 ... vn V1...,
+  ...[X -> (x1 ... xn, S1, V2, W1..., H1...)]...,
+  X W2...,
+  H2... >
+==>
+< V1... V2...,
+  S1 ...[X -> (x1 ... xn, S1, V2, W1..., H1...)]...,
+  W1... popf W2...,
+  H1... H2... >
+
+< v1 ... vn V...,
+  F...,
+  handle x1 ... xn { W1... } with { (xi! xp... => Wi...)* return => Wr... } W2...,
+  H... >
+==>
+< V...,
+  F...,
+  W1... done{xi!...} W2...,
+  { [x1 -> v1, ... , xn -> vn], opclosure(F...,xi! xp... => Wi...)*, closure(F...,Wr...) } H... >
+
+< v1 ... vn V...,
+  F...,
+  x! W1... done{xi1!...,x!,xi2!...} W2...,
+  H1... { S1, x! x1 ... xn => (S2, W3...), c... } H2... >
+==>
+< ,
+  [resume -> (S1.keys,capture(F...,W1...),
+              V...,
+              W1... done{xi1!...,x!,xi2!...},
+              H1... { S1, x! x1 ... xn => (S2, W3...), c... }),
+   x1 -> v1,
+   ...,
+   xn -> vn,
+   S2]
+   F...,
+  W2... popf W3...,
+  H2... >
+
+< V...,
+  F...,
+  done{xi!...} W1...,
+  { S1, ... return => (S2, W2...) } H... >
+==>
+< V...,
+  [S1,S2] F...,
+  W2... popf W1...,
+  H... >

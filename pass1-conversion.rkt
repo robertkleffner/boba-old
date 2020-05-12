@@ -3,6 +3,7 @@
 (require racket/match)
 (require "./lexer.rkt")
 (require "./grammar.rkt")
+(require "./common.rkt")
 (require "./pass1-ast.rkt")
 
 

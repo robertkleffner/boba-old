@@ -99,6 +99,10 @@ Part 1: Make return term separate in continuation value
 OBJECTIVE: remove all instances of V from I (i.e., make instructions not reference handler/return closures)
 Part 2: Use a stack of handlers, and store pieces of the stack in the continuation value.
 
+H ::= { S, V*, V }
+
+M ::= < V*, F*, W*, H* >
+
 < v1 ... vn V1...,
   ...[X -> (x1 ... xn, S1, V2, W1..., H1...)]...,
   X W2...,
@@ -146,3 +150,190 @@ Part 2: Use a stack of handlers, and store pieces of the stack in the continuati
   [S1,S2] F...,
   W2... popf W1...,
   H... >
+
+
+OBJECTIVE: change I to be an instruction pointer, change W to be a stack-based assembly language with labels-as-values
+           the handler stack will now also be used to push 'return' locations before a function is called. the locations will be popped on function exit.
+
+2 2 +
+handle {
+    flip! flip! bool-xor
+} with {
+    flip => false resume
+            match
+                _ is x => true resume x swap list-append
+            ;
+    return => list-null swap list-cons-left;
+}
+2 2 +
+
+main:
+    push-value 2
+    push-value 2
+    add-i32
+    push-handler { [], flip! => ([], &handle_1_flip), return => ([], &handle_1_ret) }
+    opcall flip!
+    opcall flip!
+    bool-xor
+    return
+
+
+
+
+
+
+
+=============================================
+LABELESE
+=============================================
+
+L ::= X : W*
+
+W ::= primW
+    | x
+    | x!
+    | X
+    | frame x*
+    | popframe
+    | closure X (x*)
+    | goto X
+    | call X
+    | do
+    | let X = W* in W* ;
+    | handle x* { W* }
+      with {
+          (x! x* => W* ;)*
+          return => W*
+      }
+
+V ::= primV
+    | (S*, W*)          ; closure
+    | (x*, S*, V*, W*)  ; continuation
+
+S ::= x -> V
+    | X -> (S*, W*)
+    | X -> (x*, S*, V*, W*)
+
+F ::= [S*]
+
+I ::= W
+    | popf
+    | ops {
+          S,
+          (x! x => (S*, W*),)*
+          return => (S*, W*)
+      }
+
+M ::= < V*, F*, W* >
+
+
+
+
+
+
+
+
+============================================================
+
+Machine
+
+- m ::= < r..., f..., v..., b..., i >
+- b ::= byte ; instruction
+- i ::= int ; instruction pointer
+- f ::= (frame v...) | h
+- h ::= (handler (v...) (v...))
+- c ::= int ; constructor id
+- o ::= int ; operation id
+- r ::= (guid v)  ; references
+- v ::= (ctor c v...)
+      | int
+      | bool
+      | byte
+      | (list v...)
+      | (vector v...)
+      | (closure i f)
+      | (continuation i int (f...) (v...))
+      | (op-closure o i int f v...)
+      | (ref guid)
+      | (slice v int int)
+      | (dict (v v) ...)
+      | (record (string v) ...)
+      | (variant (string v int))
+
+Bytecode
+
+
+- nop : do nothing
+- push v : push the value onto the stack
+- jump x : replace instr ptr
+- return : pop next place to go, replace instr ptr
+- call x : replace instr ptr, save next place on return stack
+- tail-call x : replace instr ptr, replace saved place on return stack
+- store n : put the top n variables from the stack into a frame on top of the frame stack
+- forget : delete the top frame on the frame stack
+- find n m : finds the mth value in the nth frame on the frame stack (counting from the top = 0)
+- call-closure : replace instr ptr, save next place on return stack, push closure frame
+- tail-call-closure : replace instr ptr, replace next place on return stack, push closure frame
+- closure x (n n) ... : create a closure value on top of the stack, with the given body and captured frame values
+- recursive x (n n) ... : same as closure instruction, but the first captured value is the created closure itself
+
+
+- call-continuation : save next place on return stack, replace instr ptr, push continuation frames, prepend continuation stack
+- tail-call-continuation : replace next place on return stack, replace instr ptr, push continuation frames, prepend continuation stack
+- op-closure x n (n n) ... : same as closure instruction, but creates an operation closure the number of arguments to pop into frame when called
+- handle x n i... : creates a handler frame with the specified number of operation closures and their ids, a return closure, and the number of arguments from the stack to thread through the computation
+- complete : calls the return closure of the handler on top of the frame stack
+- operation i : finds the nearest handler that contains an op-closure with id i, creates a continuation, then calls the op-closure
+- escape i : finds the nearest handler that contains an op-closure with id i, pops the continuation, then calls the op-closure
+
+- shuffle n i ... : re-orders, removes, and duplicates the top n elements on the stack by the pattern indicated by their index in the sequence of i
+- jump-if x : if value on top of the stack is true, replace instr ptr with x, otherwise increment
+- jump-if-not x : if value on top of the stack is false, replace instr ptr with x, otherwise increment
+- bool-and
+- bool-or
+- bool-not
+
+- newref
+- getref
+- putref
+
+- construct C_data-ctor n
+- destruct C_data-ctor
+- is-struct C_data-ctor
+- branch-struct C_data-ctor L_iftrue
+
+- list-nil
+- list-cons
+- list-snoc
+- list-head
+- list-tail
+- list-last
+- list-init
+- list-append
+- list-empty
+
+- vector n_size
+- vector-at n_index
+- vector-size
+
+- slice n_start n_stop
+- slice-at n_index
+- slice-size
+
+- dict-nil
+- dict-size
+- dict-has
+- dict-set
+- dict-get
+- dict-remove
+
+- record-nil
+- record-extend i_field-id
+- record-select i_field-id
+- record-restrict i_field-id
+
+- variant i_field-id
+- variant-is i_field-id
+- variant-get
+- variant-embed
+

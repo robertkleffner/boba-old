@@ -32,7 +32,7 @@ export ::= /"export" name-list
 
 
 
-data ::= (/"tagged" type-variable)? /"data" type-constructor data-params (/"=" data-constructor (/"|" data-constructor)*)?
+data ::= /"data" type-constructor data-params (/"tagged" type-variable)? (/"=" data-constructor (/"|" data-constructor)*)?
 
 data-params ::= type-variable*
 

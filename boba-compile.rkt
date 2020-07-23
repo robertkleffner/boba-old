@@ -3,7 +3,8 @@
 (require "pass0-loading.rkt")
 (require "pass1-conversion.rkt")
 (require "pass1-checks.rkt")
-(require "pass2-conversion.rkt")
+(require pprint)
+;(require "pass2-conversion.rkt")
 
 (define (compile to-phase entry-file)
   (let/ec return
@@ -17,12 +18,18 @@
     (check-imports pass1-results)
     (when (equal? to-phase "1")
       (return pass1-results))
-    (define pass2-results (pass2-convert pass1-results))
-    (displayln "Pass 2 conversion completed successfully.")
-    pass2-results))
+    ;(define pass2-results (pass2-convert pass1-results))
+    ;(displayln "Pass 2 conversion completed successfully.")
+    ;pass2-results)
+    ))
 
 (define (spit file)
   (displayln (load-boba-unit file)))
+
+(define (compile-tedious to-phase entry-file)
+  (let/ec return
+    (define pass0-results (gen0-program (pass0-loading entry-file)))
+    (pretty-print pass0-results)))
 
 (provide compile)
 (provide spit)

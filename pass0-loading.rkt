@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/match)
+(require pprint)
 (require "./lexer.rkt")
 (require "./grammar.rkt")
 
@@ -59,6 +60,54 @@
               #:when (equal? 'import (car i)))
      (match i
        [`(import ,names ... ,path ,alias) path]))])
+
+
+
+(provide gen0-program)
+(define/match (gen0-program boba-program)
+  [((cons main units))
+   (v-append
+    (gen-main main)
+    (v-concat (hash-map units gen-unit)))])
+
+(define/match (gen-main boba-main)
+  [(`(unit (imports ,imps ...) (declarations ,decls ...) ,main))
+   (v-append
+    (nest 4 
+          (v-append
+           (text "main-module {")
+           (v-concat (map gen-import imps))
+           (v-concat (map gen-decl decls))
+           (text "main")))
+    (text "}"))])
+
+(define (gen-unit unit-name boba-unit)
+  (match boba-unit
+    [`(unit (imports ,imps ...) (declarations ,decls ...) ,export)
+     (v-append
+      (nest 4 
+            (v-append
+             (hs-append (text "module") (gen-unit-path unit-name) (text "{"))
+             (v-concat (map gen-import imps))
+             (v-concat (map gen-decl decls))
+             (text "export")))
+      (text "}"))]))
+
+(define (gen-unit-path path)
+  (if (string? path)
+      (h-append (text "\"") (text path) (text "\""))
+      (text "remote-path")))
+
+(define/match (gen-import import)
+  [(`(import ,names ... ,path ,alias))
+   (hs-append (text "import")
+              (hs-append (text "{") (h-concat (apply-infix (text ", ") (map text names))) (text "}"))
+              (gen-unit-path path)
+              (text "as")
+              (text alias))])
+
+(define (gen-decl decl)
+  (text "decl"))
 
 (provide pass0-loading)
 (provide load-boba-unit)

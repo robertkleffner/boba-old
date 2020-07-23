@@ -1,5 +1,11 @@
 #lang brag
 
+program ::= main-module module*
+
+main-module ::= /"main-module" /"{" unit /"}"
+
+module ::= /"module" (STRING | remote) /"{" unit /"}"
+
 unit ::= imports declarations (main | export)
 imports ::= import*
 declarations ::= declaration*
@@ -157,6 +163,7 @@ simple-expr ::= word*
        | untag
        | identifier
        | constructor
+       | constructor-predicate
        | operator-name
        | "do"
        | STRING
@@ -330,4 +337,5 @@ term-variable ::= SMALL_NAME
 type-constructor ::= BIG_NAME
 term-constructor ::= BIG_NAME
 constructor ::= (term-variable /"::")? term-constructor
+constructor-predicate ::= (term-variable /"::")? PREDICATE_NAME
 identifier ::= (term-variable /"::")? term-variable (/"<" fixed-size-term-expression /">")?

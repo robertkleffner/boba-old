@@ -26,10 +26,5 @@
 (define (spit file)
   (displayln (load-boba-unit file)))
 
-(define (compile-tedious to-phase entry-file)
-  (let/ec return
-    (define pass0-results (gen0-program (pass0-loading entry-file)))
-    (pretty-print pass0-results)))
-
 (provide compile)
 (provide spit)

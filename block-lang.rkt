@@ -1,16 +1,20 @@
 #lang brag
 
-program ::= data-constructor* simple-expr
+program ::= data-constructor* block*
 
 data-constructor ::= term-constructor INTEGER
 
 
 
-term-statement-block ::= /"{" simple-expr /"}"
+block ::= /"top" func-variable /"=" word
+        | /"def" func-variable /"with" func-variable* /"=" word
+        | /"op" func-variable term-variable* /"=" word
+
+statement-block ::= /"{" simple-expr /"}"
 
 simple-expr ::= word*
 
-@word ::= term-statement-block
+@word ::= statement-block
        | assign-word
        | let-word
        | let-rec-word
@@ -25,6 +29,7 @@ simple-expr ::= word*
        | variant-literal | embedding | case-word
        | new-ref | get-ref | put-ref
        | term-variable
+       | func-variable
        | predicate-name
        | term-constructor
        | operator-name
@@ -40,29 +45,25 @@ assign-word ::= /"assign" term-variable* /"in" word
 
 
 
-let-word ::= /"local" /"fun" term-variable /"=" simple-expr /"in" word
+let-word ::= /"local" /"fun" func-variable /"in" word
 
-let-rec-word ::= /"local" /"recursive" (/"fun" term-variable /"=" simple-expr)+ /"in" word
+let-rec-word ::= /"local" /"recursive" func-variable+ /"in" word
 
 
 
-handle-word ::= /"handle" handle-params term-statement-block /"with" /"{" handler* return /"}"
+handle-word ::= /"handle" handle-params statement-block /"with" /"{" operator-name* term-variable /"}"
 
 handle-params ::= term-variable*
 
-handler ::= operator-name term-variable* /"=>" simple-expr /";"
-
-@return ::= /"afterward" simple-expr /";"
 
 
+if-word ::= /"if" statement-block statement-block
 
-if-word ::= /"if" term-statement-block term-statement-block
-
-while-word ::= /"while" term-statement-block term-statement-block
+while-word ::= /"while" statement-block statement-block
 
 
 
-function-literal ::= /"(" simple-expr /")"
+function-literal ::= /"(" func-variable /")"
 
 
 
@@ -106,8 +107,8 @@ put-ref ::= /"put@"
 
 
 
-property-name ::= PROPERTY_NAME
 operator-name ::= OPERATOR_NAME
 predicate-name ::= PREDICATE_NAME
 term-variable ::= SMALL_NAME
+func-variable ::= FUNC_NAME
 term-constructor ::= BIG_NAME

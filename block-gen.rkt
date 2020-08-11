@@ -5,10 +5,11 @@
 
 
 
-(data Def (Func ; FuncVar, Word
-           Closure ; FuncVar, [FuncVar], Word
-           OpFunc ; FuncVar, [ValVar], Word
-           OpClosure ; FuncVar, [ValVar], [ValVar], Word
+;; type Program = { FuncVar -> Def }
+
+(data Def (Func ; FuncVar, [FuncVar|ValVar], Word
+           OpFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
+           RetFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
            ))
 
 ;; type Expr = [Word]
@@ -57,32 +58,6 @@
 (define (pred-var? x)
   (and (string? x) (char=? #\? (last-char x))))
 
-;; expr-free-vars : Expr -> Set Var
-(define (expr-free-vars expr) (apply set-union (map free-vars expr)))
-
-;; free-vars : Word -> Set Var
-(define free-vars
-  (function
-   [(Statement expr)
-    (expr-free-vars expr)]
-   [(Assign vars wd)
-    (set-subtract (free-vars wd) (list->set vars))]
-   [(Let var wd)
-    (set-remove (free-vars wd) var)]
-   [(LetRec vars wd)
-    (set-subtract (free-vars wd) (list->set vars))]
-   [(Handle params handled ops ret)
-    (free-vars handled)]
-   [(If then else)
-    (set-union (free-vars then) (free-vars else))]
-   [(While check body)
-    (set-union (free-vars check) (free-vars body))]
-   [(FuncVal name)
-    (set name)]
-   [(Var name)
-    (set name)]
-   [a (set)]))
-
 (define (in-env env name)
   (ormap (λ (f) (member name f)) env))
 
@@ -111,17 +86,19 @@
      (define-values (frame index) (find-env env f))
      `(cons ,frame ,index))))
 
+;; def-free-vars : FuncVar, { FuncVar -> Def } -> [FuncVar|ValVar]
 (define (def-free-vars var defs)
   (define f
     (function
-     [(Top fvar wd)
-      (free-vars wd)]
-     [(Local fvar included wd)
-      (set-subtract (free-vars wd) (list->set fvar))]
-     [(Op fvar params wd)
-      (set-subtract (free-vars wd) (list->set fvar))]))
+     [(Func name free wd)
+      free]
+     [(OpFunc name args free wd)
+      free]
+     [(RetFunc name args free wd)
+      free]))
   (f (hash-ref defs var)))
 
+;; op-args : FuncVar, { FuncVar -> Def } -> [ValVar]
 (define (op-args var defs)
   (define f
     (function
@@ -130,11 +107,22 @@
   (length (f (hash-ref defs var))))
 
 (define (gen-def def ctors defs)
-  (function
-   [(Top fvar wd)
-    `(label ,(string->symbol fvar)
-            ,(apply values (gen-word wd ctors defs null)))]
-   [(
+  (define f
+    (function
+     [(Func name free wd)
+      `(label ,(string->symbol name)
+              ,(apply values (gen-word wd ctors defs (list free))))]
+     [(OpFunc name params free wd)
+      (define initial-frame (cons "$resume" (append params free)))
+      `(label ,(string->symbol name)
+              ,(apply values (gen-word wd ctors defs (list initial-frame))))]
+     [(RetFunc name params free wd)
+      (define initial-frame (append params free))
+      `(label ,(string->symbol name)
+              ,(apply values (gen-word wd ctors defs (list initial-frame))))]))
+  (f def))
+      
+      
 
 ;; gen-expr : Expr, Ctors, Defs, Env -> [BubbleInstr]
 (define (gen-expr expr ctors defs env)

@@ -2,6 +2,8 @@
 
 (require racket/set)
 (require racket/list)
+(module+ test
+  (require rackunit))
 
 
 
@@ -58,10 +60,27 @@
 (define (pred-var? x)
   (and (string? x) (char=? #\? (last-char x))))
 
+(module+ test
+  (check-true (op-var? "raise!"))
+  (check-false (op-var? "raise"))
+  (check-true (func-var? "$foo"))
+  (check-false (func-var? "foo")))
+
+
+
+;; in-env : Env, String -> Bool
 (define (in-env env name)
   (ormap (λ (f) (member name f)) env))
 
-;; find-env : Env, String -> Int, Int
+(module+ test
+  (check-false (in-env null "hello"))
+  (check-not-false (in-env (list (list "hello")) "hello"))
+  (check-not-false (in-env (list null (list "hello")) "hello"))
+  (check-not-false (in-env (list (list "hello") (list "hello" "gbye")) "gbye")))
+
+
+
+;; find-env : Env, String -> (Int, Int)
 (define (find-env env name)
   (define (find-env-rec env frame index)
     (cond
@@ -71,20 +90,29 @@
       [(null? (first env))
        (find-env-rec (rest env) (add1 frame) 0)]
       ;; found it in current frame?
-      [(string=? name (car (first (first env))))
-       (values frame index (cdr (first (first env))))]
+      [(string=? name (first (first env)))
+       (cons frame index)]
       ;; next variable in current frame is not the target?
       [else
        (find-env-rec (cons (rest (first env)) (rest env)) frame (add1 index))]))
   (find-env-rec env 0 0))
+
+(module+ test
+  (check-equal? (find-env (list (list "hello")) "hello")
+             (cons 0 0))
+  (check-equal? (find-env (list (list "hello" "gbye")) "gbye")
+             (cons 0 1))
+  (check-equal? (find-env (list (list "hello") (list "gbye")) "gbye")
+             (cons 1 0)))
+
+
 
 (define (gen-capture-args free env)
   (apply
    values
    (for/list ([f free]
               #:when (in-env env f))
-     (define-values (frame index) (find-env env f))
-     `(cons ,frame ,index))))
+     (find-env env f))))
 
 ;; def-free-vars : FuncVar, { FuncVar -> Def } -> [FuncVar|ValVar]
 (define (def-free-vars var defs)
@@ -105,25 +133,37 @@
      [(Op fvar params wd)
       params]))
   (length (f (hash-ref defs var))))
+      
 
+
+;; gen-program : Ctors, Defs -> [BubbleInstr]
+(define (gen-program ctors defs)
+  (append
+   `((call ,(string->symbol "main"))
+     (jump ,(string->symbol "end")))
+   (append*
+    (for/list ([d (in-hash-values defs)])
+      (gen-def d ctors defs)))
+   `((label ,(string->symbol "end")
+            (nop)))))
+
+;; gen-def : Def, Ctors, Defs -> [BubbleInstr]
 (define (gen-def def ctors defs)
   (define f
     (function
      [(Func name free wd)
-      `(label ,(string->symbol name)
-              ,(apply values (gen-word wd ctors defs (list free))))]
+      `((label ,(string->symbol name)
+               ,(apply values (gen-word wd ctors defs (list free)))))]
      [(OpFunc name params free wd)
       (define initial-frame (cons "$resume" (append params free)))
-      `(label ,(string->symbol name)
-              ,(apply values (gen-word wd ctors defs (list initial-frame))))]
+      `((label ,(string->symbol name)
+               ,(apply values (gen-word wd ctors defs (list initial-frame)))))]
      [(RetFunc name params free wd)
       (define initial-frame (append params free))
-      `(label ,(string->symbol name)
-              ,(apply values (gen-word wd ctors defs (list initial-frame))))]))
+      `((label ,(string->symbol name)
+               ,(apply values (gen-word wd ctors defs (list initial-frame)))))]))
   (f def))
-      
-      
-
+   
 ;; gen-expr : Expr, Ctors, Defs, Env -> [BubbleInstr]
 (define (gen-expr expr ctors defs env)
   (append*
@@ -194,8 +234,8 @@
    [(Var name)
     (cond
       [(string=? name "$resume")
-       (define-values (frame index) (find-env env name))
-       `((find ,frame ,index)
+       (define loc (find-env env name))
+       `((find ,(car loc) ,(cdr loc))
          (call-continuation))]
       [(op-var? name)
        `((operation ,(string->symbol name)))]
@@ -204,8 +244,8 @@
          [(hash-has-key? prims name)
           (hash-ref prims name)]
          [(in-env env name)
-          (define-values (frame index) (find-env env name))
-          `((find ,frame ,index)
+          (define loc (find-env env name))
+          `((find ,(car loc) ,(cdr loc))
             (call-closure))]
          [else
           `(call ,(string->symbol name))])]
@@ -215,8 +255,8 @@
       [(pred-var? name)
        `((is-struct ,(string->symbol name)))]
       [else
-       (define-values (frame index) (find-env env name))
-       `((find ,frame ,index))])]
+       (define loc (find-env env name))
+       `((find ,(car loc) ,(cdr loc)))])]
    [(ListVal)
     `((list-nil))]
    [(NewRef)

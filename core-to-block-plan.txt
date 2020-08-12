@@ -12,10 +12,10 @@ But also:
 
 `let foo z = swap z ;`
 
-contains a free variable that references a *non-closure* function. The qualifier is important: not only can we `call $swap` instead of using `find f i + call-closure`, we know that foo doesn't need to capture the closure referred to by `swap` because there is no such closure. Hence, foo itself does not need to be a closure, despite having a free variable.
+contains a free variable that references a *non-closure* function. The qualifier is important: not only can we `call $swap` instead of using `find f i + call-closure` in the body of the function, we know that foo doesn't need to capture the closure referred to by `swap` because there is no such closure. Hence, foo itself does not need to be a closure, despite having a free variable.
 
 The plan:
-- It is critical to perform a renaming step, so that all names in the program are defined exactly once. We can then be assured that all generated blocks will have a unique name that can be referenced from any other expression, eliminating some of the complexities introduced by shadowing and lexical scope.
+- It is critical to perform a renaming step, so that all names in the program are defined exactly once. The odd case here is 'resume', which is never explicitly defined and can refer to multiple different continuations, so some scope handling is still necessary. Still, the renaming step ensures that all generated blocks will have a unique name that can be referenced from any other expression, eliminating some of the complexities introduced by shadowing and lexical scope.
 - We then begin extracting blocks from the top down. The first expression has no free variables, and so it can be a non-closure block; this is our `main`.
 - Within that expression, we may have `let` or `let-rec` words. Most likely, these are not enclosed within an `assign` scope, so they will be extracted as non-closure blocks as well.
 - And so on with each level, until we encounter a `let` or `let-rec` enclosed within an `assign` scope. This time we extract it, noting which variables refer to values and closures, and which refer to non-closure functions. Only variables in the former two categories get counted as the 'free' variables for that closure, and will be listed explicitly in the block definition.

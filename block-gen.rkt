@@ -169,15 +169,25 @@
   (define f
     (function
      [(Func name free wd)
-      `(,(list* 'label `',(string->symbol name) (gen-word wd ctors defs (list free))))]
+      `(,(append (list*
+                  'label
+                  `',(string->symbol name)
+                  (gen-word wd ctors defs (list free)))
+                 '((return))))]
      [(OpFunc name params free wd)
       (define initial-frame (cons "$resume" (append params free)))
-      `((label ',(string->symbol name)
-               ,(apply values (gen-word wd ctors defs (list initial-frame)))))]
+      `(,(append (list*
+                  'label
+                  `',(string->symbol name)
+                  (gen-word wd ctors defs (list initial-frame)))
+                 '((return))))]
      [(RetFunc name params free wd)
       (define initial-frame (append params free))
-      `((label ',(string->symbol name)
-               ,(apply values (gen-word wd ctors defs (list initial-frame)))))]))
+      `(, (append (list*
+                   'label
+                   `',(string->symbol name)
+                   (gen-word wd ctors defs (list initial-frame)))
+                  '((return))))]))
   (f def))
    
 ;; gen-expr : Expr, Ctors, Defs, Env -> [BubbleInstr]

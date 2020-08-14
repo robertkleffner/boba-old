@@ -6,33 +6,54 @@
 (module+ test
   (require rackunit))
 
+; The primary purpose of this file is to translate a set of Boba-blocks program into
+; a flat list of Bubble 'byte code' instructions. Boba-blocks are themselves flat,
+; except for some nested structure around variable values, conditionals, and handlers,
+; so the translation is mostly straight-forward. The major complexity in this translation
+; is still probably closure conversion.
+
+; Notable assumptions made in the algorithms and data-structures of this file:
+; 1) Each block definition should have a globally unique name, and the same
+; goes for constructor names. This allows them to be put into a hash table.
+; This is less important for value variable names, which are still tracked
+; through an scoped environment in this step before being erased entirely
+; into frame offsets.
+; 2) Each block definition explicitly lists it's 'capturable' free variables.
+; These free variables may be value variables, or calls to closures or continuations
+; that are within scope. Note that top-level functions are almost always guaranteed
+; to NOT be closures, so they should not be listed in free variables of other
+; block definitions.
 
 
-;; type Program = { FuncVar -> Def }
 
-(data Def (Func ; FuncVar, [FuncVar|ValVar], Word
-           OpFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
-           RetFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
+;; type Blocks = { FuncVar -> Def }
+
+(provide B-Func B-OpFunc B-RetFunc)
+(data Def (B-Func ; FuncVar, [FuncVar|ValVar], Word
+           B-OpFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
+           B-RetFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
            ))
 
 ;; type Expr = [Word]
 
-(data Word (Statement ; Expr
-            Assign ; [ValVar], Word
-            Let ; FuncVar, Word
-            LetRec ; [FuncVar], Word
-            Handle ; [ValVar], Expr, [(OpVar, FuncVar)], FuncVar
-            If ; Expr Expr
-            While ; Expr Expr
-            FuncVal ; FuncVar
-            ListVal
-            NewRef
-            GetRef
-            PutRef
-            Var ; ValVar | OpVar | FuncVar | ConVar
-            Do
-            Destruct
-            Number ; Number
+(provide B-Statement B-Assign B-Let B-LetRec B-Handle B-If B-While B-FuncVal B-ListVal
+         B-NewRef B-GetRef B-PutRef B-Var B-Do B-Destruct B-Number)
+(data Word (B-Statement ; Expr
+            B-Assign ; [ValVar], Word
+            B-Let ; FuncVar, Word
+            B-LetRec ; [FuncVar], Word
+            B-Handle ; [ValVar], Expr, [(OpVar, FuncVar)], FuncVar
+            B-If ; Expr Expr
+            B-While ; Expr Expr
+            B-FuncVal ; FuncVar
+            B-ListVal
+            B-NewRef
+            B-GetRef
+            B-PutRef
+            B-Var ; ValVar | OpVar | FuncVar | ConVar
+            B-Do
+            B-Destruct
+            B-Number ; Number
             ))
 
 
@@ -135,11 +156,11 @@
 (define (def-free-vars var defs)
   (define f
     (function
-     [(Func name free wd)
+     [(B-Func name free wd)
       free]
-     [(OpFunc name args free wd)
+     [(B-OpFunc name args free wd)
       free]
-     [(RetFunc name args free wd)
+     [(B-RetFunc name args free wd)
       free]))
   (f (hash-ref defs var)))
 
@@ -147,7 +168,7 @@
 (define (op-args var defs)
   (define f
     (function
-     [(Op fvar params wd)
+     [(B-OpFunc fvar params wd)
       params]))
   (length (f (hash-ref defs var))))
       
@@ -168,20 +189,20 @@
 (define (gen-def def ctors defs)
   (define f
     (function
-     [(Func name free wd)
+     [(B-Func name free wd)
       `(,(append (list*
                   'label
                   `',(string->symbol name)
                   (gen-word wd ctors defs (list free)))
                  '((return))))]
-     [(OpFunc name params free wd)
+     [(B-OpFunc name params free wd)
       (define initial-frame (cons "$resume" (append params free)))
       `(,(append (list*
                   'label
                   `',(string->symbol name)
                   (gen-word wd ctors defs (list initial-frame)))
                  '((return))))]
-     [(RetFunc name params free wd)
+     [(B-RetFunc name params free wd)
       (define initial-frame (append params free))
       `(, (append (list*
                    'label
@@ -200,32 +221,40 @@
 (define (gen-word word ctors defs env)
   (define f
     (function
-     [(Statement expr)
+     [(B-Statement expr)
       (gen-expr expr ctors defs env)]
-     [(Assign vars wd)
+     [(B-Assign vars wd)
       (append
        `((store ,(length vars)))
        (gen-word wd ctors defs (cons vars env))
        `((forget)))]
-     [(Let var wd)
-      (append
-       `((closure ',(string->symbol var)
-                  ,(gen-capture-args (def-free-vars var defs) env)))
-       `((store 1))
-       (gen-word wd ctors defs (cons '(var) env))
-       `((forget)))]
-     [(LetRec vars wd)
-      (define closures
-        (for/list ([v vars])
-          `(closure ',(string->symbol v)
-                    ,(gen-capture-args (def-free-vars v defs) env))))
-      (append
-       closures
-       `((mutual ,(length vars)))
-       `((store ,(length vars)))
-       (gen-word wd ctors defs (cons vars env))
-       `((forget)))]
-     [(Handle params body ops return)
+     [(B-Let var wd)
+      (cond
+        [(null? (def-free-vars var defs))
+         (gen-word wd ctors defs env)]
+        [else
+         (append
+          `((closure ',(string->symbol var)
+                     ,(gen-capture-args (def-free-vars var defs) env)))
+          `((store 1))
+          (gen-word wd ctors defs (cons '(var) env))
+          `((forget)))])]
+     [(B-LetRec vars wd)
+      (cond
+        [(for/and ([v vars]) (null? (def-free-vars v defs)))
+         (gen-word wd ctors defs env)]
+        [else
+         (define closures
+           (for/list ([v vars])
+             `(closure ',(string->symbol v)
+                       ,(gen-capture-args (def-free-vars v defs) env))))
+         (append
+          closures
+          `((mutual ,(length vars)))
+          `((store ,(length vars)))
+          (gen-word wd ctors defs (cons vars env))
+          `((forget)))])]
+     [(B-Handle params body ops return)
       (define ops
         (for/list ([o (map cdr ops)])
           `(op-closure ',(string->symbol o)
@@ -241,13 +270,13 @@
                  ,(map (λ (o) (string->symbol (car o))) ops)))
        body
        `((complete)))]
-     [(If then else)
+     [(B-If then else)
       (define gen-then (gen-expr then ctors defs env))
       (append
        `((offset-if ,(add1 (length gen-then))))
        gen-then
        (gen-expr else ctors defs env))]
-     [(While test body)
+     [(B-While test body)
       (define gen-body (gen-expr body ctors defs env))
       (define gen-test (gen-expr test ctors defs env))
       (append
@@ -255,10 +284,10 @@
        `((offset-if ,(add1 (add1 (length gen-body)))))
        gen-body
        `((offset ,(negate (add1 (+ (length gen-test) (length gen-body)))))))]
-     [(FuncVal name)
+     [(B-FuncVal name)
       `((closure ',(string->symbol name)
                  ,(gen-capture-args (def-free-vars name defs) env)))]
-     [(Var name)
+     [(B-Var name)
       (cond
         [(string=? name "$resume")
          (define loc (find-env env name))
@@ -284,19 +313,19 @@
         [else
          (define loc (find-env env name))
          `((find ,(car loc) ,(cdr loc)))])]
-     [(ListVal)
+     [(B-ListVal)
       `((list-nil))]
-     [(NewRef)
+     [(B-NewRef)
       `((newref))]
-     [(GetRef)
+     [(B-GetRef)
       `((getref))]
-     [(PutRef)
+     [(B-PutRef)
       `((putref))]
-     [(Do)
+     [(B-Do)
       `((call-closure))]
-     [(Destruct)
+     [(B-Destruct)
       `((destruct))]
-     [(Number n)
+     [(B-Number n)
       `((push ,n))]
      [a (error "Cannot generate word")]))
   (f word))

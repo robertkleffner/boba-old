@@ -26,18 +26,20 @@
 
 
 
+;; type Block-Program = (Ctors, Blocks)
+
 ;; type Blocks = { FuncVar -> Def }
 
 (provide B-Func B-OpFunc B-RetFunc)
-(data Def (B-Func ; FuncVar, [FuncVar|ValVar], Word
-           B-OpFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
-           B-RetFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
-           ))
+(data BlockDef (B-Func ; FuncVar, [FuncVar|ValVar], Word
+                B-OpFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
+                B-RetFunc ; FuncVar, [ValVar], [FuncVar|ValVar], Word
+                ))
 
 ;; type Expr = [Word]
 
-(provide B-Statement B-Assign B-Let B-LetRec B-Handle B-If B-While B-FuncVal B-ListVal
-         B-NewRef B-GetRef B-PutRef B-Var B-Do B-Destruct B-Number)
+(provide B-Statement B-Assign B-Let B-LetRec B-Handle B-If B-While B-FuncVal
+         B-Var B-Destruct B-Number)
 (data Word (B-Statement ; Expr
             B-Assign ; [ValVar], Word
             B-Let ; FuncVar, Word
@@ -46,12 +48,7 @@
             B-If ; Expr Expr
             B-While ; Expr Expr
             B-FuncVal ; FuncVar
-            B-ListVal
-            B-NewRef
-            B-GetRef
-            B-PutRef
-            B-Var ; ValVar | OpVar | FuncVar | ConVar
-            B-Do
+            B-Var ; ValVar | OpVar | FuncVar | ConVar | PredVar
             B-Destruct
             B-Number ; Number
             ))
@@ -59,7 +56,13 @@
 
 
 (define PRIMS
-  (hash "$add-i32" '((add-i32))
+  (hash "$newref" '((newref))
+        "$getref" '((getref))
+        "$putref" '((putref))
+
+        "$do" '((call-closure))
+
+        "$add-i32" '((add-i32))
         "$sub-i32" '((sub-i32))
         "$mul-i32" '((mul-i32))
         "$div-i32" '((div-i32))
@@ -69,6 +72,7 @@
         "$bool-not" '((bool-not))
         "$bool-xor" '((bool-xor))
 
+        "$list-nil" '((list-nil))
         "$list-cons" '((list-cons))
         "$list-snoc" '((list-snoc))
         "$list-head" '((list-head))
@@ -228,6 +232,8 @@
        `((store ,(length vars)))
        (gen-word wd ctors defs (cons vars env))
        `((forget)))]
+
+     ;; if there are no free variables for this word, it can be called directly, and doesn't need to be stored as a closure
      [(B-Let var wd)
       (cond
         [(null? (def-free-vars var defs))
@@ -239,6 +245,8 @@
           `((store 1))
           (gen-word wd ctors defs (cons '(var) env))
           `((forget)))])]
+
+     ;; if none of the mutual words have free variables, they can all be called directly, and don't need to be stored as closures
      [(B-LetRec vars wd)
       (cond
         [(for/and ([v vars]) (null? (def-free-vars v defs)))
@@ -313,16 +321,6 @@
         [else
          (define loc (find-env env name))
          `((find ,(car loc) ,(cdr loc)))])]
-     [(B-ListVal)
-      `((list-nil))]
-     [(B-NewRef)
-      `((newref))]
-     [(B-GetRef)
-      `((getref))]
-     [(B-PutRef)
-      `((putref))]
-     [(B-Do)
-      `((call-closure))]
      [(B-Destruct)
       `((destruct))]
      [(B-Number n)

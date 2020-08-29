@@ -61,10 +61,10 @@
 
 (data Boba-Type
       (T-Prim ; String
-       T-Var ; String
-       T-Con ; String
+       T-Var ; String Kind
+       T-Con ; String Kind
        T-App ; Boba-Type Boba-Type
-       T-Eff ; String
+       T-Eff ; String Kind
        T-Field ; String
        T-Seq ; [Boba-Type]
 
@@ -118,49 +118,47 @@
    [(AbelianConstraint d e) #true]
    [a #false]))
 
-;; kind : Boba-Type, Context -> Boba-Kind
+;; kind : Boba-Type -> Boba-Kind
 (define kind
-  (function*
-   [((T-Prim name) ctx)
+  (function
+   [(T-Prim name)
     (hash-ref PRIM-TYPE-KINDS name)]
-   [((T-Var name) ctx)
-    (context-find ctx name)]
-   [((T-Con name) ctx)
-    (context-find ctx name)]
-   [((T-App left right) ctx)
-    (define kl (kind left ctx))
-    (define kr (kind right ctx))
-    (case kl
-      [(K-Arr in out)
-       (if (equal? in kr)
-           out
-           (error "Kind error: could not apply kind arrow to given kind arg"))]
-      [else (error "Kind error: application left element must have arrow kind")])]
-   [((T-Eff name) ctx)
-    (context-find ctx name)]
-   [((T-Field name) ctx)
+   [(T-Var name kind)
+    kind]
+   [(T-Con name kind)
+    kind]
+   [(T-App left right)
+    (define kl (kind left))
+    (define kr (kind right))
+    (define-values (fun arg) ((phi (K-Arr fun arg) (values fun arg)) kl))
+    (if (equal? fun kr)
+        arg
+        (error "Kind error: could not apply kind arrow to given kind arg"))]
+   [(T-Eff name kind)
+    kind]
+   [(T-Field name)
     (K-Arr (K-Val) (K-Field))]
-   [((T-Seq types) ctx)
-    (define kinds (for/list ([t types]) (kind t ctx)))
+   [(T-Seq types)
+    (define kinds (map kind types))
     (if (andmap (λ (k) (equal? k (first kinds))))
         (K-Seq (first kinds))
         (error "Kind error: all types within a type sequence must be the same kind"))]
-   [((T-TagId) ctx)
+   [(T-TagId)
     (K-Tag)]
-   [((T-SizeId) ctx)
+   [(T-SizeId)
     (K-Size)]
-   [((T-Tag name) ctx)
+   [(T-Tag name)
     (K-Tag)]
-   [((T-Size size) ctx)
+   [(T-Size size)
     (K-Size)]
-   [((T-Mul left right) ctx)
-    (define kl (kind left ctx))
-    (define kr (kind right ctx))
+   [(T-Mul left right)
+    (define kl (kind left))
+    (define kr (kind right))
     (if (equal? kl kr)
         kl
         (error "Kind error: both types in an abelian type conjunction must be the same kind"))]
-   [((T-Pow exp type) ctx)
-    (kind type ctx)]))
+   [(T-Pow exp type)
+    (kind type)]))
 
 ;; make-hull : Boba-Type, FreshVarStream, Context -> Boba-Type, [(String, Boba-Kind)], [(String, Boba-Type)]
 (define (make-hull type fresh ctx)
@@ -199,6 +197,31 @@
       (values (T-Seq hulls) deps defs)]
      [a (error "Type error: cannot generate a hull for an abelian type component.")]))
   (f type))
+
+;; head-normal-form? : Boba-Type -> Bool
+(define head-normal-form?
+  (function
+   [(T-Var name) #true]
+   [(T-App left right) (head-normal-form? left)]
+   [a #false]))
+
+;; pred-head-normal-form? : Boba-Pred -> Bool
+(define (pred-head-normal-form? pred)
+  (head-normal-form? (Boba-Pred-arg pred)))
+
+;; type-substitute : Boba-Type, String, Boba-Type -> Boba-Type
+(define type-substitute
+  (function*
+   [((T-App left right) var sub)
+    (T-App (type-substitute left var sub) (type-substitute right var sub))]
+   [((T-Var name) var sub)
+    (if (equal? name var) sub (T-Var name))]
+   [((T-Seq types) var sub)
+    (T-Seq (for/list ([t types]) (type-substitute t var sub)))]
+   [((T-Mul left right) var sub)
+    (T-Mul (type-substitute left var sub) (type-substitute right var sub))]
+   [((T-Pow exp body) var sub)
+    (T-Pow exp (type-substitute body var sub))]))
 
 
 
@@ -322,9 +345,9 @@
   (define f
     (function
      [(TagEquation vars consts)
-      (abelian-invert (abelian-divide (abelian-subtract eqn (TagEquation (hash var exp) (hash))) exp))]
+      (abelian-invert (abelian-divide (abelian-sub eqn (TagEquation (hash var exp) (hash))) exp))]
      [(SizeEquation vars const)
-      (abelian-invert (abelian-divide (abelian-subtract eqn (SizeEquation (hash var exp) 0))))]))
+      (abelian-invert (abelian-divide (abelian-sub eqn (SizeEquation (hash var exp) 0))))]))
   (f eqn))
 
 ;; abelian-substitute : AbelianEquation, String, AbelianEquation -> AbelianEquation
@@ -333,9 +356,9 @@
   (define f
     (function
      [(TagEquation vars consts)
-      (abelian-add eqn (abelian-scale (abelian-subtract sub (TagEquation (hash var exp) (hash))) exp))]
+      (abelian-add eqn (abelian-scale (abelian-sub sub (TagEquation (hash var exp) (hash))) exp))]
      [(SizeEquation vars const)
-      (abelian-add eqn (abelian-scale (abelian-subtract sub (SizeEquation (hash var exp) 0)) exp))]))
+      (abelian-add eqn (abelian-scale (abelian-sub sub (SizeEquation (hash var exp) 0)) exp))]))
   (f eqn))
    
 

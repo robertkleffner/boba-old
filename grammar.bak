@@ -309,7 +309,7 @@ slice-pattern ::= /"S[" pattern-expression* (pattern-expression "..." pattern-ex
 
 record-pattern ::= /"R{" (term-variable /"=" pattern-expression)* (term-variable "...")? /"}"
 
-dictionary-pattern ::= /"D{" (term-variable /"=" pattern-expression)* (term-variable "...")? /"}"
+dictionary-pattern ::= /"D{" (pattern-expression /"=" pattern-expression)* (term-variable "...")? /"}"
 
 
 

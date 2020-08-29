@@ -14,6 +14,7 @@ remote ::= SMALL_NAME /"." SMALL_NAME /"." SMALL_NAME /":" INTEGER /"." INTEGER 
       | data-rec
       | pattern
       | ad-hoc
+      | effect-set
       | overload
       | deriving
       | tag
@@ -56,12 +57,20 @@ predicate-context ::= /"<=" simple-predicate (/"," simple-predicate)*
 
 
 
+effect-set ::= /"effect" effect-label type-variable* effect-ops
+
+effect-ops ::= /"{" effect-op+ /"}"
+
+effect-op ::= operator-name /":" type-sequence /"-->" type-sequence
+
+
+
 tag ::= /"tag" term-constructor /"with" type-constructor
 
 
 
 synonym ::= /"synonym" type-constructor type-variable* /"=" type-expression
-          | /"synonym" operator-name type-variable* /"=" effect (/"," effect)*
+          | /"synonym" effect-label type-variable* /"=" effect (/"," effect)*
           | /"synonym" simple-predicate /"=" simple-predicate (/"," simple-predicate)*
 
 
@@ -109,7 +118,7 @@ primitive-type ::= "Bool"
                  | "Tuple" | "List" | "Vector" | "Slice" | "Dict" | "Record" | "Variant" | "Bag" | "Union"
                  | "Ref"
 
-effect ::= operator-name type-expression*
+effect ::= effect-label type-expression*
 
 effect-sequence ::= type-variable /"..." (effect (/"," effect)*)?
 
@@ -132,7 +141,7 @@ tag-constructor ::= type-constructor (/"^" INTEGER)?
 term-statement-block ::= /"{" term-statement* /"}"
 
 term-statement ::= /"let" pattern-expression* /"<=" simple-expr /";"
-                 | simple-expr ";"
+                 | simple-expr /";"
 
 simple-expr ::= word*
 
@@ -323,6 +332,7 @@ fixed-size-params ::= /"<" term-variable+ /">"
 fixed-size-term-expression ::= (fixed-size-term-factor /"+")* fixed-size-term-factor
 fixed-size-term-factor ::= INTEGER | term-variable | INTEGER term-variable
 property-name ::= PROPERTY_NAME
+effect-label ::= OPERATOR_NAME
 operator-name ::= OPERATOR_NAME
 predicate-name ::= (term-variable /"::")? PREDICATE_NAME
 type-variable ::= SMALL_NAME

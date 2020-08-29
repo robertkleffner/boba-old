@@ -1,0 +1,15 @@
+cons : Vector<n> a -> a -> Vector<n+1> a
+head : Vector<n+1> a -> a
+tail : Vector<n+1> a -> Vector<n> a
+replicate<n> : a -> Vector<n> a
+concat : Vector<n> -> Vector<m> -> Vector<n+m>
+get-elem-at<n> : Vector<n+m+1> a -> a
+set-elem-at<n> : a -> Vector<n+m+1> a -> Vector<n+m+1>
+intersperse : a -> Vector<n> a -> Vector<n*2+(-1)>
+transpose : Vector<n> (Vector<m> a) -> Vector<m> (Vector<n> a)
+take<n> : Vector<n+m> a -> Vector<n> a
+drop<n> : Vector<n+m> a -> Vector<m> a
+split-at<n> : Vector<n+m> a -> (Vector<n> a, Vector<m> a)
+basis<n> : Num a => Vector<n> a
+zip<n> : ((Vector<n> a)...) -> Vector<n> (a...)
+unzip : Vector<n> (a...) -> ((Vector<n> a)...)
